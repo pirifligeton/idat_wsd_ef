@@ -2,6 +2,8 @@ package com.citas.medicos.servicio;
 
 import com.citas.medicos.dto.MedicoDto;
 import com.citas.medicos.entidad.Medico;
+import com.citas.medicos.excepcion.RecursoNoEncontradoException;
+import com.citas.medicos.excepcion.RecursoYaExisteException;
 import com.citas.medicos.repositorio.MedicoRepositorio;
 import org.springframework.stereotype.Service;
 
@@ -27,7 +29,7 @@ public class MedicoServicioImpl implements MedicoServicio {
     @Override
     public Medico obtenerPorId(Long id) {
         return repositorio.findById(id)
-                .orElseThrow(() -> new RuntimeException("Médico no encontrado con id: " + id));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Médico no encontrado con id: " + id));
     }
 
     @Override
@@ -38,10 +40,10 @@ public class MedicoServicioImpl implements MedicoServicio {
     @Override
     public Medico registrar(MedicoDto dto) {
         if (repositorio.existsByNumeroColegiado(dto.getNumeroColegiado())) {
-            throw new RuntimeException("Ya existe un médico con el número colegiado: " + dto.getNumeroColegiado());
+            throw new RecursoYaExisteException("Ya existe un médico con el número colegiado: " + dto.getNumeroColegiado());
         }
         if (repositorio.existsByCorreoElectronico(dto.getCorreoElectronico())) {
-            throw new RuntimeException("Ya existe un médico con el correo: " + dto.getCorreoElectronico());
+            throw new RecursoYaExisteException("Ya existe un médico con el correo: " + dto.getCorreoElectronico());
         }
 
         Medico nuevoMedico = new Medico(
@@ -58,7 +60,8 @@ public class MedicoServicioImpl implements MedicoServicio {
 
     @Override
     public Medico actualizar(Long id, MedicoDto dto) {
-        Medico medicoExistente = obtenerPorId(id);
+        Medico medicoExistente = repositorio.findById(id)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Médico no encontrado con id: " + id));
 
         medicoExistente.setNombre(dto.getNombre());
         medicoExistente.setApellido(dto.getApellido());
@@ -72,7 +75,8 @@ public class MedicoServicioImpl implements MedicoServicio {
 
     @Override
     public void eliminar(Long id) {
-        Medico medico = obtenerPorId(id);
+        Medico medico = repositorio.findById(id)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Médico no encontrado con id: " + id));
         repositorio.delete(medico);
     }
 

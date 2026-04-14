@@ -8,7 +8,11 @@ import com.citas.citas.dto.MedicoDto;
 import com.citas.citas.dto.PacienteDto;
 import com.citas.citas.entidad.Cita;
 import com.citas.citas.entidad.EstadoCita;
+import com.citas.citas.excepcion.RecursoNoEncontradoException;
+import com.citas.citas.excepcion.RecursoYaExisteException;
+import com.citas.citas.excepcion.ServicioNoDisponibleException;
 import com.citas.citas.repositorio.CitaRepositorio;
+import feign.FeignException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -40,11 +44,21 @@ public class CitaServicioImpl implements CitaServicio {
     @Override
     public CitaDetalleDto obtenerDetallePorId(Long id) {
         Cita cita = repositorio.findById(id)
-                .orElseThrow(() -> new RuntimeException("Cita no encontrada con id: " + id));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Cita no encontrada con id: " + id));
 
         // Llamadas a los otros microservicios para obtener datos completos
-        PacienteDto paciente = pacienteCliente.obtenerPorId(cita.getPacienteId());
-        MedicoDto medico = medicoCliente.obtenerPorId(cita.getMedicoId());
+        PacienteDto paciente;
+        MedicoDto medico;
+        try {
+            paciente = pacienteCliente.obtenerPorId(cita.getPacienteId());
+        } catch (FeignException.NotFound ex) {
+            throw new ServicioNoDisponibleException("El paciente con id " + cita.getPacienteId() + " ya no existe en el sistema.");
+        }
+        try {
+            medico = medicoCliente.obtenerPorId(cita.getMedicoId());
+        } catch (FeignException.NotFound ex) {
+            throw new ServicioNoDisponibleException("El médico con id " + cita.getMedicoId() + " ya no existe en el sistema.");
+        }
 
         // Construcción del DTO enriquecido
         CitaDetalleDto detalle = new CitaDetalleDto();
@@ -71,12 +85,30 @@ public class CitaServicioImpl implements CitaServicio {
 
     @Override
     public Cita registrar(CitaDto dto) {
+        // Validar que el paciente exista en servicio-pacientes antes de guardar
+        try {
+            pacienteCliente.obtenerPorId(dto.getPacienteId());
+        } catch (FeignException.NotFound ex) {
+            throw new ServicioNoDisponibleException("No existe un paciente con id: " + dto.getPacienteId());
+        } catch (FeignException ex) {
+            throw new ServicioNoDisponibleException("El servicio de pacientes no está disponible en este momento.");
+        }
+
+        // Validar que el médico exista en servicio-medicos antes de guardar
+        try {
+            medicoCliente.obtenerPorId(dto.getMedicoId());
+        } catch (FeignException.NotFound ex) {
+            throw new ServicioNoDisponibleException("No existe un médico con id: " + dto.getMedicoId());
+        } catch (FeignException ex) {
+            throw new ServicioNoDisponibleException("El servicio de médicos no está disponible en este momento.");
+        }
+
         // Validar que no exista una cita duplicada en la misma fecha/hora con el mismo médico
         boolean existeDuplicado = repositorio.existsByPacienteIdAndMedicoIdAndFechaCitaAndHoraCita(
                 dto.getPacienteId(), dto.getMedicoId(), dto.getFechaCita(), dto.getHoraCita()
         );
         if (existeDuplicado) {
-            throw new RuntimeException("Ya existe una cita registrada para ese médico en esa fecha y hora.");
+            throw new RecursoYaExisteException("Ya existe una cita registrada para ese médico en esa fecha y hora.");
         }
 
         // Estado por defecto: PENDIENTE si no se especifica
@@ -97,7 +129,7 @@ public class CitaServicioImpl implements CitaServicio {
     @Override
     public Cita actualizar(Long id, CitaDto dto) {
         Cita citaExistente = repositorio.findById(id)
-                .orElseThrow(() -> new RuntimeException("Cita no encontrada con id: " + id));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Cita no encontrada con id: " + id));
 
         citaExistente.setPacienteId(dto.getPacienteId());
         citaExistente.setMedicoId(dto.getMedicoId());
@@ -115,7 +147,7 @@ public class CitaServicioImpl implements CitaServicio {
     @Override
     public Cita cambiarEstado(Long id, EstadoCita nuevoEstado) {
         Cita cita = repositorio.findById(id)
-                .orElseThrow(() -> new RuntimeException("Cita no encontrada con id: " + id));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Cita no encontrada con id: " + id));
 
         cita.setEstado(nuevoEstado);
         return repositorio.save(cita);
@@ -124,7 +156,7 @@ public class CitaServicioImpl implements CitaServicio {
     @Override
     public void eliminar(Long id) {
         Cita cita = repositorio.findById(id)
-                .orElseThrow(() -> new RuntimeException("Cita no encontrada con id: " + id));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Cita no encontrada con id: " + id));
         repositorio.delete(cita);
     }
 

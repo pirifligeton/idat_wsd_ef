@@ -2,6 +2,8 @@ package com.citas.pacientes.servicio;
 
 import com.citas.pacientes.dto.PacienteDto;
 import com.citas.pacientes.entidad.Paciente;
+import com.citas.pacientes.excepcion.RecursoNoEncontradoException;
+import com.citas.pacientes.excepcion.RecursoYaExisteException;
 import com.citas.pacientes.repositorio.PacienteRepositorio;
 import org.springframework.stereotype.Service;
 
@@ -27,16 +29,16 @@ public class PacienteServicioImpl implements PacienteServicio {
     @Override
     public Paciente obtenerPorId(Long id) {
         return repositorio.findById(id)
-                .orElseThrow(() -> new RuntimeException("Paciente no encontrado con id: " + id));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Paciente no encontrado con id: " + id));
     }
 
     @Override
     public Paciente registrar(PacienteDto dto) {
         if (repositorio.existsByNumeroCedula(dto.getNumeroCedula())) {
-            throw new RuntimeException("Ya existe un paciente con la cédula: " + dto.getNumeroCedula());
+            throw new RecursoYaExisteException("Ya existe un paciente con la cédula: " + dto.getNumeroCedula());
         }
         if (repositorio.existsByCorreoElectronico(dto.getCorreoElectronico())) {
-            throw new RuntimeException("Ya existe un paciente con el correo: " + dto.getCorreoElectronico());
+            throw new RecursoYaExisteException("Ya existe un paciente con el correo: " + dto.getCorreoElectronico());
         }
 
         Paciente nuevoPaciente = new Paciente(
@@ -54,7 +56,8 @@ public class PacienteServicioImpl implements PacienteServicio {
 
     @Override
     public Paciente actualizar(Long id, PacienteDto dto) {
-        Paciente pacienteExistente = obtenerPorId(id);
+        Paciente pacienteExistente = repositorio.findById(id)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Paciente no encontrado con id: " + id));
 
         pacienteExistente.setNombre(dto.getNombre());
         pacienteExistente.setApellido(dto.getApellido());
@@ -69,7 +72,8 @@ public class PacienteServicioImpl implements PacienteServicio {
 
     @Override
     public void eliminar(Long id) {
-        Paciente paciente = obtenerPorId(id);
+        Paciente paciente = repositorio.findById(id)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Paciente no encontrado con id: " + id));
         repositorio.delete(paciente);
     }
 
