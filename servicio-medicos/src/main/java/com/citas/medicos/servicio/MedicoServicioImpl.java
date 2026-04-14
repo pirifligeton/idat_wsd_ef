@@ -33,8 +33,8 @@ public class MedicoServicioImpl implements MedicoServicio {
     }
 
     @Override
-    public List<Medico> listarPorEspecialidad(String especialidad) {
-        return repositorio.findByEspecialidad(especialidad);
+    public List<Medico> listarPorEspecialidad(Long especialidadId) {
+        return repositorio.findByEspecialidadId(especialidadId);
     }
 
     @Override
@@ -49,7 +49,7 @@ public class MedicoServicioImpl implements MedicoServicio {
         Medico nuevoMedico = new Medico(
                 dto.getNombre(),
                 dto.getApellido(),
-                dto.getEspecialidad(),
+                dto.getEspecialidadId(),
                 dto.getNumeroColegiado(),
                 dto.getTelefono(),
                 dto.getCorreoElectronico()
@@ -65,7 +65,7 @@ public class MedicoServicioImpl implements MedicoServicio {
 
         medicoExistente.setNombre(dto.getNombre());
         medicoExistente.setApellido(dto.getApellido());
-        medicoExistente.setEspecialidad(dto.getEspecialidad());
+        medicoExistente.setEspecialidadId(dto.getEspecialidadId());
         medicoExistente.setNumeroColegiado(dto.getNumeroColegiado());
         medicoExistente.setTelefono(dto.getTelefono());
         medicoExistente.setCorreoElectronico(dto.getCorreoElectronico());

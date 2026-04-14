@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 
 /**
  * Entidad que representa a un médico registrado en el sistema.
+ * El campo especialidadId es una referencia lógica hacia servicio-especialidades
+ * (sin FK directa entre bases de datos — patrón de microservicios).
  */
 @Entity
 @Table(name = "medicos")
@@ -19,8 +21,8 @@ public class Medico {
     @Column(nullable = false)
     private String apellido;
 
-    @Column(nullable = false)
-    private String especialidad;
+    @Column(name = "especialidad_id", nullable = false)
+    private Long especialidadId;
 
     @Column(name = "numero_colegiado", unique = true, nullable = false)
     private String numeroColegiado;
@@ -34,11 +36,11 @@ public class Medico {
     // Constructor vacío requerido por JPA
     public Medico() {}
 
-    public Medico(String nombre, String apellido, String especialidad,
+    public Medico(String nombre, String apellido, Long especialidadId,
                   String numeroColegiado, String telefono, String correoElectronico) {
         this.nombre = nombre;
         this.apellido = apellido;
-        this.especialidad = especialidad;
+        this.especialidadId = especialidadId;
         this.numeroColegiado = numeroColegiado;
         this.telefono = telefono;
         this.correoElectronico = correoElectronico;
@@ -54,8 +56,8 @@ public class Medico {
     public String getApellido() { return apellido; }
     public void setApellido(String apellido) { this.apellido = apellido; }
 
-    public String getEspecialidad() { return especialidad; }
-    public void setEspecialidad(String especialidad) { this.especialidad = especialidad; }
+    public Long getEspecialidadId() { return especialidadId; }
+    public void setEspecialidadId(Long especialidadId) { this.especialidadId = especialidadId; }
 
     public String getNumeroColegiado() { return numeroColegiado; }
     public void setNumeroColegiado(String numeroColegiado) { this.numeroColegiado = numeroColegiado; }

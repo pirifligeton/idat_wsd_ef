@@ -14,7 +14,7 @@ public interface MedicoServicio {
 
     Medico obtenerPorId(Long id);
 
-    List<Medico> listarPorEspecialidad(String especialidad);
+    List<Medico> listarPorEspecialidad(Long especialidadId);
 
     Medico registrar(MedicoDto dto);
 

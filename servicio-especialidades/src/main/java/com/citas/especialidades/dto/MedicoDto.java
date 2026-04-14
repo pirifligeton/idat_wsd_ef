@@ -1,11 +1,12 @@
-package com.citas.medicos.dto;
+package com.citas.especialidades.dto;
 
 /**
- * DTO utilizado para recibir y enviar datos del médico en las peticiones HTTP.
- * El campo especialidadId es una referencia lógica hacia servicio-especialidades.
+ * DTO que mapea la respuesta recibida desde servicio-medicos.
+ * Refleja los campos expuestos por el endpoint GET /api/medicos/especialidad/{id}.
  */
 public class MedicoDto {
 
+    private Long id;
     private String nombre;
     private String apellido;
     private Long especialidadId;
@@ -16,6 +17,9 @@ public class MedicoDto {
     public MedicoDto() {}
 
     // Getters y Setters
+
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
     public String getNombre() { return nombre; }
     public void setNombre(String nombre) { this.nombre = nombre; }

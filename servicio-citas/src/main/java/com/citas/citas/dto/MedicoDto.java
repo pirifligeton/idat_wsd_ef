@@ -3,13 +3,14 @@ package com.citas.citas.dto;
 /**
  * DTO que mapea la respuesta recibida desde servicio-medicos.
  * Refleja los campos expuestos por el endpoint GET /api/medicos/{id}.
+ * El campo especialidadId es la referencia lógica hacia servicio-especialidades.
  */
 public class MedicoDto {
 
     private Long id;
     private String nombre;
     private String apellido;
-    private String especialidad;
+    private Long especialidadId;
     private String numeroColegiado;
     private String telefono;
     private String correoElectronico;
@@ -27,8 +28,8 @@ public class MedicoDto {
     public String getApellido() { return apellido; }
     public void setApellido(String apellido) { this.apellido = apellido; }
 
-    public String getEspecialidad() { return especialidad; }
-    public void setEspecialidad(String especialidad) { this.especialidad = especialidad; }
+    public Long getEspecialidadId() { return especialidadId; }
+    public void setEspecialidadId(Long especialidadId) { this.especialidadId = especialidadId; }
 
     public String getNumeroColegiado() { return numeroColegiado; }
     public void setNumeroColegiado(String numeroColegiado) { this.numeroColegiado = numeroColegiado; }

@@ -38,10 +38,10 @@ public class MedicoControlador {
         return ResponseEntity.ok(servicio.obtenerPorId(id));
     }
 
-    @GetMapping("/especialidad/{especialidad}")
-    @Operation(summary = "Listar médicos filtrados por especialidad")
-    public ResponseEntity<List<Medico>> listarPorEspecialidad(@PathVariable String especialidad) {
-        return ResponseEntity.ok(servicio.listarPorEspecialidad(especialidad));
+    @GetMapping("/especialidad/{especialidadId}")
+    @Operation(summary = "Listar médicos filtrados por ID de especialidad")
+    public ResponseEntity<List<Medico>> listarPorEspecialidad(@PathVariable Long especialidadId) {
+        return ResponseEntity.ok(servicio.listarPorEspecialidad(especialidadId));
     }
 
     @PostMapping
