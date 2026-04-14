@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+
 /**
  * Manejador global de excepciones para el servicio de médicos.
  * Intercepta excepciones lanzadas en los controladores y devuelve
@@ -35,6 +36,18 @@ public class ManejadorExcepciones {
                 ex.getMessage()
         );
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
+
+    /**
+     * Maneja especialidad inexistente o servicio caído → HTTP 422 Unprocessable Entity
+     */
+    @ExceptionHandler(ServicioNoDisponibleException.class)
+    public ResponseEntity<RespuestaError> manejarServicioNoDisponible(ServicioNoDisponibleException ex) {
+        RespuestaError error = new RespuestaError(
+                HttpStatus.UNPROCESSABLE_ENTITY.value(),
+                ex.getMessage()
+        );
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(error);
     }
 
     /**
