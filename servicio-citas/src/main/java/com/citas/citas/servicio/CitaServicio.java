@@ -1,9 +1,9 @@
 package com.citas.citas.servicio;
 
+import com.citas.citas.dto.CambioEstadoDto;
 import com.citas.citas.dto.CitaDetalleDto;
 import com.citas.citas.dto.CitaDto;
 import com.citas.citas.entidad.Cita;
-import com.citas.citas.entidad.EstadoCita;
 
 import java.util.List;
 
@@ -24,7 +24,7 @@ public interface CitaServicio {
 
     Cita actualizar(Long id, CitaDto dto);
 
-    Cita cambiarEstado(Long id, EstadoCita nuevoEstado);
+    Cita cambiarEstado(Long id, CambioEstadoDto dto);
 
     void eliminar(Long id);
 

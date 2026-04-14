@@ -8,6 +8,9 @@ import java.time.LocalTime;
  * Entidad que representa una cita médica en el sistema.
  * Almacena los IDs del paciente y médico como referencias lógicas
  * hacia sus respectivos microservicios (sin FK directa entre servicios).
+ *
+ * Los campos clínicos (diagnostico, tratamiento, observaciones) son nulos
+ * hasta que la cita es marcada como COMPLETADA mediante el endpoint PATCH.
  */
 @Entity
 @Table(name = "citas")
@@ -35,6 +38,16 @@ public class Cita {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private EstadoCita estado;
+
+    // Campos clínicos — se rellenan únicamente al completar la cita
+    @Column(nullable = true)
+    private String diagnostico;
+
+    @Column(nullable = true)
+    private String tratamiento;
+
+    @Column(nullable = true)
+    private String observaciones;
 
     // Constructor vacío requerido por JPA
     public Cita() {}
@@ -70,5 +83,14 @@ public class Cita {
 
     public EstadoCita getEstado() { return estado; }
     public void setEstado(EstadoCita estado) { this.estado = estado; }
+
+    public String getDiagnostico() { return diagnostico; }
+    public void setDiagnostico(String diagnostico) { this.diagnostico = diagnostico; }
+
+    public String getTratamiento() { return tratamiento; }
+    public void setTratamiento(String tratamiento) { this.tratamiento = tratamiento; }
+
+    public String getObservaciones() { return observaciones; }
+    public void setObservaciones(String observaciones) { this.observaciones = observaciones; }
 
 }

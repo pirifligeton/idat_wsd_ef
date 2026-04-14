@@ -1,9 +1,9 @@
 package com.citas.citas.controlador;
 
+import com.citas.citas.dto.CambioEstadoDto;
 import com.citas.citas.dto.CitaDetalleDto;
 import com.citas.citas.dto.CitaDto;
 import com.citas.citas.entidad.Cita;
-import com.citas.citas.entidad.EstadoCita;
 import com.citas.citas.servicio.CitaServicio;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -65,10 +65,12 @@ public class CitaControlador {
     }
 
     @PatchMapping("/{id}/estado")
-    @Operation(summary = "Cambiar únicamente el estado de una cita (PENDIENTE, CONFIRMADA, CANCELADA, COMPLETADA)")
+    @Operation(summary = "Cambiar el estado de una cita. Si el nuevo estado es COMPLETADA, "
+            + "los campos 'diagnostico' y 'tratamiento' son obligatorios. "
+            + "Al completar, se genera automáticamente un registro en el historial médico.")
     public ResponseEntity<Cita> cambiarEstado(@PathVariable Long id,
-                                              @RequestParam EstadoCita nuevoEstado) {
-        return ResponseEntity.ok(servicio.cambiarEstado(id, nuevoEstado));
+                                              @RequestBody CambioEstadoDto dto) {
+        return ResponseEntity.ok(servicio.cambiarEstado(id, dto));
     }
 
     @DeleteMapping("/{id}")

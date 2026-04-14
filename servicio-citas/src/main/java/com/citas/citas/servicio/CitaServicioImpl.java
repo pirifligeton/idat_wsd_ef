@@ -1,11 +1,9 @@
 package com.citas.citas.servicio;
 
+import com.citas.citas.cliente.HistorialCliente;
 import com.citas.citas.cliente.MedicoCliente;
 import com.citas.citas.cliente.PacienteCliente;
-import com.citas.citas.dto.CitaDetalleDto;
-import com.citas.citas.dto.CitaDto;
-import com.citas.citas.dto.MedicoDto;
-import com.citas.citas.dto.PacienteDto;
+import com.citas.citas.dto.*;
 import com.citas.citas.entidad.Cita;
 import com.citas.citas.entidad.EstadoCita;
 import com.citas.citas.excepcion.RecursoNoEncontradoException;
@@ -19,7 +17,13 @@ import java.util.List;
 
 /**
  * Implementación del servicio de gestión de citas médicas.
- * Se comunica con servicio-pacientes y servicio-medicos para enriquecer respuestas.
+ * Se comunica con servicio-pacientes, servicio-medicos y servicio-historial-medico
+ * mediante OpenFeign.
+ *
+ * Cuando una cita es marcada como COMPLETADA:
+ *  1. Valida que los campos clínicos no sean nulos.
+ *  2. Guarda los campos clínicos en la entidad Cita.
+ *  3. Dispara automáticamente un POST a servicio-historial-medico.
  */
 @Service
 public class CitaServicioImpl implements CitaServicio {
@@ -27,13 +31,16 @@ public class CitaServicioImpl implements CitaServicio {
     private final CitaRepositorio repositorio;
     private final PacienteCliente pacienteCliente;
     private final MedicoCliente medicoCliente;
+    private final HistorialCliente historialCliente;
 
     public CitaServicioImpl(CitaRepositorio repositorio,
                             PacienteCliente pacienteCliente,
-                            MedicoCliente medicoCliente) {
+                            MedicoCliente medicoCliente,
+                            HistorialCliente historialCliente) {
         this.repositorio = repositorio;
         this.pacienteCliente = pacienteCliente;
         this.medicoCliente = medicoCliente;
+        this.historialCliente = historialCliente;
     }
 
     @Override
@@ -46,7 +53,6 @@ public class CitaServicioImpl implements CitaServicio {
         Cita cita = repositorio.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Cita no encontrada con id: " + id));
 
-        // Llamadas a los otros microservicios para obtener datos completos
         PacienteDto paciente;
         MedicoDto medico;
         try {
@@ -60,7 +66,6 @@ public class CitaServicioImpl implements CitaServicio {
             throw new ServicioNoDisponibleException("El médico con id " + cita.getMedicoId() + " ya no existe en el sistema.");
         }
 
-        // Construcción del DTO enriquecido
         CitaDetalleDto detalle = new CitaDetalleDto();
         detalle.setId(cita.getId());
         detalle.setFechaCita(cita.getFechaCita());
@@ -85,7 +90,7 @@ public class CitaServicioImpl implements CitaServicio {
 
     @Override
     public Cita registrar(CitaDto dto) {
-        // Validar que el paciente exista en servicio-pacientes antes de guardar
+        // Validar existencia del paciente
         try {
             pacienteCliente.obtenerPorId(dto.getPacienteId());
         } catch (FeignException.NotFound ex) {
@@ -94,7 +99,7 @@ public class CitaServicioImpl implements CitaServicio {
             throw new ServicioNoDisponibleException("El servicio de pacientes no está disponible en este momento.");
         }
 
-        // Validar que el médico exista en servicio-medicos antes de guardar
+        // Validar existencia del médico
         try {
             medicoCliente.obtenerPorId(dto.getMedicoId());
         } catch (FeignException.NotFound ex) {
@@ -103,7 +108,7 @@ public class CitaServicioImpl implements CitaServicio {
             throw new ServicioNoDisponibleException("El servicio de médicos no está disponible en este momento.");
         }
 
-        // Validar que no exista una cita duplicada en la misma fecha/hora con el mismo médico
+        // Validar duplicado
         boolean existeDuplicado = repositorio.existsByPacienteIdAndMedicoIdAndFechaCitaAndHoraCita(
                 dto.getPacienteId(), dto.getMedicoId(), dto.getFechaCita(), dto.getHoraCita()
         );
@@ -111,7 +116,6 @@ public class CitaServicioImpl implements CitaServicio {
             throw new RecursoYaExisteException("Ya existe una cita registrada para ese médico en esa fecha y hora.");
         }
 
-        // Estado por defecto: PENDIENTE si no se especifica
         EstadoCita estadoInicial = dto.getEstado() != null ? dto.getEstado() : EstadoCita.PENDIENTE;
 
         Cita nuevaCita = new Cita(
@@ -145,11 +149,47 @@ public class CitaServicioImpl implements CitaServicio {
     }
 
     @Override
-    public Cita cambiarEstado(Long id, EstadoCita nuevoEstado) {
+    public Cita cambiarEstado(Long id, CambioEstadoDto dto) {
         Cita cita = repositorio.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Cita no encontrada con id: " + id));
 
-        cita.setEstado(nuevoEstado);
+        if (dto.getNuevoEstado() == EstadoCita.COMPLETADA) {
+            // Validar que los campos clínicos estén presentes
+            if (dto.getDiagnostico() == null || dto.getDiagnostico().isBlank()) {
+                throw new RecursoYaExisteException("El campo 'diagnostico' es obligatorio para completar una cita.");
+            }
+            if (dto.getTratamiento() == null || dto.getTratamiento().isBlank()) {
+                throw new RecursoYaExisteException("El campo 'tratamiento' es obligatorio para completar una cita.");
+            }
+
+            // Guardar campos clínicos en la cita
+            cita.setDiagnostico(dto.getDiagnostico());
+            cita.setTratamiento(dto.getTratamiento());
+            cita.setObservaciones(dto.getObservaciones());
+            cita.setEstado(EstadoCita.COMPLETADA);
+            Cita citaGuardada = repositorio.save(cita);
+
+            // Disparar POST a servicio-historial-medico
+            try {
+                HistorialDto historialDto = new HistorialDto(
+                        citaGuardada.getId(),
+                        citaGuardada.getPacienteId(),
+                        citaGuardada.getMedicoId(),
+                        citaGuardada.getDiagnostico(),
+                        citaGuardada.getTratamiento(),
+                        citaGuardada.getObservaciones()
+                );
+                historialCliente.registrar(historialDto);
+            } catch (FeignException ex) {
+                throw new ServicioNoDisponibleException(
+                        "La cita fue completada pero el servicio de historial no está disponible. Intente registrar el historial manualmente.");
+            }
+
+            return citaGuardada;
+        }
+
+        // Para cualquier otro estado: solo actualizar
+        cita.setEstado(dto.getNuevoEstado());
         return repositorio.save(cita);
     }
 
