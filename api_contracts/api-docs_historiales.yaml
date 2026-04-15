@@ -1,0 +1,173 @@
+openapi: 3.1.0
+info:
+  title: OpenAPI definition
+  version: v2
+servers:
+- url: http://localhost:8085
+  description: Generated server url
+tags:
+- name: Historial Médico
+  description: Registro inmutable de resultados de citas completadas
+paths:
+  /api/historial:
+    get:
+      tags:
+      - Historial Médico
+      summary: Listar todos los registros de historial médico
+      operationId: listarTodos
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/HistorialMedico"
+    post:
+      tags:
+      - Historial Médico
+      summary: Registrar entrada de historial (invocado por servicio-citas al completar
+        una cita)
+      operationId: registrar
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HistorialDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/HistorialMedico"
+  /api/historial/{id}:
+    get:
+      tags:
+      - Historial Médico
+      summary: Obtener un registro de historial por su ID
+      operationId: obtenerPorId
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/HistorialMedico"
+  /api/historial/paciente/{pacienteId}:
+    get:
+      tags:
+      - Historial Médico
+      summary: Listar todo el historial médico de un paciente
+      operationId: listarPorPaciente
+      parameters:
+      - name: pacienteId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/HistorialMedico"
+  /api/historial/medico/{medicoId}:
+    get:
+      tags:
+      - Historial Médico
+      summary: Listar todos los registros atendidos por un médico
+      operationId: listarPorMedico
+      parameters:
+      - name: medicoId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/HistorialMedico"
+  /api/historial/cita/{citaId}:
+    get:
+      tags:
+      - Historial Médico
+      summary: Obtener el historial de una cita específica
+      operationId: obtenerPorCitaId
+      parameters:
+      - name: citaId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/HistorialMedico"
+components:
+  schemas:
+    HistorialDto:
+      type: object
+      properties:
+        citaId:
+          type: integer
+          format: int64
+        pacienteId:
+          type: integer
+          format: int64
+        medicoId:
+          type: integer
+          format: int64
+        diagnostico:
+          type: string
+        tratamiento:
+          type: string
+        observaciones:
+          type: string
+    HistorialMedico:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        citaId:
+          type: integer
+          format: int64
+        pacienteId:
+          type: integer
+          format: int64
+        medicoId:
+          type: integer
+          format: int64
+        fechaRegistro:
+          type: string
+          format: date-time
+        diagnostico:
+          type: string
+        tratamiento:
+          type: string
+        observaciones:
+          type: string

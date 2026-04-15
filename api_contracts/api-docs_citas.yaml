@@ -1,0 +1,317 @@
+openapi: 3.1.0
+info:
+  title: OpenAPI definition
+  version: v3
+servers:
+- url: http://localhost:8083
+  description: Generated server url
+tags:
+- name: Citas Médicas
+  description: Operaciones de gestión de citas médicas
+paths:
+  /api/citas/{id}:
+    get:
+      tags:
+      - Citas Médicas
+      summary: Obtener detalle completo de una cita (incluye datos del paciente y
+        médico)
+      operationId: obtenerDetalle
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CitaDetalleDto"
+    put:
+      tags:
+      - Citas Médicas
+      summary: Actualizar los datos de una cita existente
+      operationId: actualizar
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CitaDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/Cita"
+    delete:
+      tags:
+      - Citas Médicas
+      summary: Eliminar una cita por su ID
+      operationId: eliminar
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+  /api/citas:
+    get:
+      tags:
+      - Citas Médicas
+      summary: Listar todas las citas registradas
+      operationId: listarTodas
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Cita"
+    post:
+      tags:
+      - Citas Médicas
+      summary: Registrar una nueva cita médica
+      operationId: registrar
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CitaDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/Cita"
+  /api/citas/{id}/estado:
+    patch:
+      tags:
+      - Citas Médicas
+      summary: "Cambiar el estado de una cita. Si el nuevo estado es COMPLETADA, los\
+        \ campos 'diagnostico' y 'tratamiento' son obligatorios. Al completar, se\
+        \ genera automáticamente un registro en el historial médico."
+      operationId: cambiarEstado
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CambioEstadoDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/Cita"
+  /api/citas/paciente/{pacienteId}:
+    get:
+      tags:
+      - Citas Médicas
+      summary: Listar todas las citas de un paciente
+      operationId: listarPorPaciente
+      parameters:
+      - name: pacienteId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Cita"
+  /api/citas/medico/{medicoId}:
+    get:
+      tags:
+      - Citas Médicas
+      summary: Listar todas las citas de un médico
+      operationId: listarPorMedico
+      parameters:
+      - name: medicoId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Cita"
+components:
+  schemas:
+    CitaDto:
+      type: object
+      properties:
+        pacienteId:
+          type: integer
+          format: int64
+        medicoId:
+          type: integer
+          format: int64
+        fechaCita:
+          type: string
+          format: date
+        horaCita:
+          type: string
+          example: 14:30:00
+        motivo:
+          type: string
+        estado:
+          type: string
+          enum:
+          - PENDIENTE
+          - CONFIRMADA
+          - CANCELADA
+          - COMPLETADA
+    Cita:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        pacienteId:
+          type: integer
+          format: int64
+        medicoId:
+          type: integer
+          format: int64
+        fechaCita:
+          type: string
+          format: date
+        horaCita:
+          type: string
+          example: 14:30:00
+        motivo:
+          type: string
+        estado:
+          type: string
+          enum:
+          - PENDIENTE
+          - CONFIRMADA
+          - CANCELADA
+          - COMPLETADA
+        diagnostico:
+          type: string
+        tratamiento:
+          type: string
+        observaciones:
+          type: string
+    CambioEstadoDto:
+      type: object
+      properties:
+        nuevoEstado:
+          type: string
+          enum:
+          - PENDIENTE
+          - CONFIRMADA
+          - CANCELADA
+          - COMPLETADA
+        diagnostico:
+          type: string
+        tratamiento:
+          type: string
+        observaciones:
+          type: string
+    CitaDetalleDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        fechaCita:
+          type: string
+          format: date
+        horaCita:
+          type: string
+          example: 14:30:00
+        motivo:
+          type: string
+        estado:
+          type: string
+          enum:
+          - PENDIENTE
+          - CONFIRMADA
+          - CANCELADA
+          - COMPLETADA
+        paciente:
+          $ref: "#/components/schemas/PacienteDto"
+        medico:
+          $ref: "#/components/schemas/MedicoDto"
+    MedicoDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        nombre:
+          type: string
+        apellido:
+          type: string
+        especialidadId:
+          type: integer
+          format: int64
+        numeroColegiado:
+          type: string
+        telefono:
+          type: string
+        correoElectronico:
+          type: string
+    PacienteDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        nombre:
+          type: string
+        apellido:
+          type: string
+        fechaNacimiento:
+          type: string
+          format: date
+        telefono:
+          type: string
+        correoElectronico:
+          type: string
+        numeroCedula:
+          type: string
+        grupoSanguineo:
+          type: string

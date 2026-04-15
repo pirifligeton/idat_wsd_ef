@@ -1,0 +1,163 @@
+openapi: 3.1.0
+info:
+  title: OpenAPI definition
+  version: v2
+servers:
+- url: http://localhost:8082
+  description: Generated server url
+tags:
+- name: Médicos
+  description: Operaciones de gestión de médicos
+paths:
+  /api/medicos/{id}:
+    get:
+      tags:
+      - Médicos
+      summary: Obtener un médico por su ID
+      operationId: obtenerPorId
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/Medico"
+    put:
+      tags:
+      - Médicos
+      summary: Actualizar los datos de un médico existente
+      operationId: actualizar
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MedicoDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/Medico"
+    delete:
+      tags:
+      - Médicos
+      summary: Eliminar un médico por su ID
+      operationId: eliminar
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+  /api/medicos:
+    get:
+      tags:
+      - Médicos
+      summary: Listar todos los médicos registrados
+      operationId: listarTodos
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Medico"
+    post:
+      tags:
+      - Médicos
+      summary: Registrar un nuevo médico
+      operationId: registrar
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MedicoDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/Medico"
+  /api/medicos/especialidad/{especialidadId}:
+    get:
+      tags:
+      - Médicos
+      summary: Listar médicos filtrados por ID de especialidad
+      operationId: listarPorEspecialidad
+      parameters:
+      - name: especialidadId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Medico"
+components:
+  schemas:
+    MedicoDto:
+      type: object
+      properties:
+        nombre:
+          type: string
+        apellido:
+          type: string
+        especialidadId:
+          type: integer
+          format: int64
+        numeroColegiado:
+          type: string
+        telefono:
+          type: string
+        correoElectronico:
+          type: string
+    Medico:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        nombre:
+          type: string
+        apellido:
+          type: string
+        especialidadId:
+          type: integer
+          format: int64
+        numeroColegiado:
+          type: string
+        telefono:
+          type: string
+        correoElectronico:
+          type: string

@@ -1,0 +1,209 @@
+openapi: 3.1.0
+info:
+  title: OpenAPI definition
+  version: v1
+servers:
+- url: http://localhost:8084
+  description: Generated server url
+tags:
+- name: Especialidades
+  description: Operaciones de gestión de especialidades médicas
+paths:
+  /api/especialidades/{id}:
+    get:
+      tags:
+      - Especialidades
+      summary: Obtener una especialidad por su ID
+      operationId: obtenerPorId
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/Especialidad"
+    put:
+      tags:
+      - Especialidades
+      summary: Actualizar los datos de una especialidad existente
+      operationId: actualizar
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EspecialidadDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/Especialidad"
+    delete:
+      tags:
+      - Especialidades
+      summary: Eliminar una especialidad por su ID
+      operationId: eliminar
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+  /api/especialidades:
+    get:
+      tags:
+      - Especialidades
+      summary: Listar todas las especialidades registradas
+      operationId: listarTodas
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Especialidad"
+    post:
+      tags:
+      - Especialidades
+      summary: Registrar una nueva especialidad médica
+      operationId: registrar
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EspecialidadDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/Especialidad"
+  /api/especialidades/{id}/medicos:
+    get:
+      tags:
+      - Especialidades
+      summary: Obtener una especialidad junto con la lista de médicos que la ejercen
+      operationId: obtenerConMedicos
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/EspecialidadDetalleDto"
+  /api/especialidades/area/{areaClinica}:
+    get:
+      tags:
+      - Especialidades
+      summary: Listar especialidades filtradas por área clínica
+      operationId: listarPorAreaClinica
+      parameters:
+      - name: areaClinica
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Especialidad"
+components:
+  schemas:
+    EspecialidadDto:
+      type: object
+      properties:
+        nombre:
+          type: string
+        descripcion:
+          type: string
+        codigoEspecialidad:
+          type: string
+        areaClinica:
+          type: string
+    Especialidad:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        nombre:
+          type: string
+        descripcion:
+          type: string
+        codigoEspecialidad:
+          type: string
+        areaClinica:
+          type: string
+    EspecialidadDetalleDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        nombre:
+          type: string
+        descripcion:
+          type: string
+        codigoEspecialidad:
+          type: string
+        areaClinica:
+          type: string
+        medicos:
+          type: array
+          items:
+            $ref: "#/components/schemas/MedicoDto"
+    MedicoDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        nombre:
+          type: string
+        apellido:
+          type: string
+        especialidadId:
+          type: integer
+          format: int64
+        numeroColegiado:
+          type: string
+        telefono:
+          type: string
+        correoElectronico:
+          type: string
