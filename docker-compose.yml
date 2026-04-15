@@ -1,0 +1,197 @@
+networks:
+  citas-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+
+services:
+
+  # ─── Base de datos ────────────────────────────────────────────────────────────
+  # Un solo servidor PostgreSQL con bases de datos aisladas por microservicio.
+  # init.sql crea las DBs automáticamente en el primer arranque.
+  postgres:
+    image: postgres:16
+    container_name: postgres
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin123
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - citas-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  # ─── Keycloak (OAuth2 / JWT) ──────────────────────────────────────────────────
+  # Modo desarrollo con H2 embebido. El realm citas-medicas se importa automáticamente
+  # desde keycloak/realm-export.json al arrancar.
+  # Puerto interno: 8080 | Puerto externo: 8180
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0.0
+    container_name: keycloak
+    command: start-dev --import-realm
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+    ports:
+      - "8180:8080"
+    volumes:
+      - ./keycloak:/opt/keycloak/data/import
+    networks:
+      - citas-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health/ready || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+
+  # ─── Eureka (Servidor de Descubrimiento) ──────────────────────────────────────
+  eureka:
+    build:
+      context: ./servicio-descubrimiento
+    container_name: eureka
+    ports:
+      - "8761:8761"
+    networks:
+      - citas-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8761/eureka/apps || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+
+  # ─── API Gateway ──────────────────────────────────────────────────────────────
+  # Requiere Eureka y Keycloak listos antes de arrancar.
+  # KEYCLOAK_URL usa el puerto interno 8080 (comunicación entre contenedores).
+  gateway:
+    build:
+      context: ./servicio-gateway
+    container_name: gateway
+    ports:
+      - "9090:9090"
+    environment:
+      EUREKA_URL: http://eureka:8761/eureka/
+      KEYCLOAK_URL: http://keycloak:8080
+    networks:
+      - citas-network
+    depends_on:
+      eureka:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+
+  # ─── Servicio Pacientes ───────────────────────────────────────────────────────
+  pacientes:
+    build:
+      context: ./servicio-pacientes
+    container_name: pacientes
+    ports:
+      - "8081:8081"
+    environment:
+      DB_HOST: postgres
+      DB_USERNAME: admin
+      DB_PASSWORD: admin123
+      EUREKA_URL: http://eureka:8761/eureka/
+    networks:
+      - citas-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka:
+        condition: service_healthy
+
+  # ─── Servicio Médicos ─────────────────────────────────────────────────────────
+  medicos:
+    build:
+      context: ./servicio-medicos
+    container_name: medicos
+    ports:
+      - "8082:8082"
+    environment:
+      DB_HOST: postgres
+      DB_USERNAME: admin
+      DB_PASSWORD: admin123
+      EUREKA_URL: http://eureka:8761/eureka/
+      ESPECIALIDADES_URL: http://especialidades:8084
+    networks:
+      - citas-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka:
+        condition: service_healthy
+
+  # ─── Servicio Citas ───────────────────────────────────────────────────────────
+  citas:
+    build:
+      context: ./servicio-citas
+    container_name: citas
+    ports:
+      - "8083:8083"
+    environment:
+      DB_HOST: postgres
+      DB_USERNAME: admin
+      DB_PASSWORD: admin123
+      EUREKA_URL: http://eureka:8761/eureka/
+      PACIENTES_URL: http://pacientes:8081
+      MEDICOS_URL: http://medicos:8082
+      HISTORIAL_URL: http://historial:8085
+    networks:
+      - citas-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka:
+        condition: service_healthy
+
+  # ─── Servicio Especialidades ──────────────────────────────────────────────────
+  especialidades:
+    build:
+      context: ./servicio-especialidades
+    container_name: especialidades
+    ports:
+      - "8084:8084"
+    environment:
+      DB_HOST: postgres
+      DB_USERNAME: admin
+      DB_PASSWORD: admin123
+      EUREKA_URL: http://eureka:8761/eureka/
+      MEDICOS_URL: http://medicos:8082
+    networks:
+      - citas-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka:
+        condition: service_healthy
+
+  # ─── Servicio Historial Médico ────────────────────────────────────────────────
+  historial:
+    build:
+      context: ./servicio-historial-medico
+    container_name: historial
+    ports:
+      - "8085:8085"
+    environment:
+      DB_HOST: postgres
+      DB_USERNAME: admin
+      DB_PASSWORD: admin123
+      EUREKA_URL: http://eureka:8761/eureka/
+    networks:
+      - citas-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka:
+        condition: service_healthy
