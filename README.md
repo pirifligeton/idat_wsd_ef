@@ -275,8 +275,10 @@ POST /citas/api/citas
 {
   "pacienteId": 1,
   "medicoId": 1,
-  "fechaHora": "2026-04-20T10:00:00",
-  "motivo": "Control general"
+  "fechaCita": "2026-04-20",
+  "horaCita": "09:30:00",
+  "motivo": "Control cardíaco de rutina",
+  "estado": "PENDIENTE"
 }
 ```
 
