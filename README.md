@@ -249,7 +249,7 @@ POST /medicos/api/medicos
   "nombre": "Carlos",
   "apellido": "Ramírez",
   "especialidadId": 1,
-  "numeroLicencia": "LIC-001",
+  "numeroColegiado": "LIC-001",
   "correoElectronico": "carlos@hospital.com",
   "telefono": "999-0001"
 }
